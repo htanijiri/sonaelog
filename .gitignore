@@ -23,6 +23,8 @@ journal/
 .dev.vars
 config.js
 config.toml
+# Supabase CLI の設定は秘密を含まないので管理する
+!supabase/config.toml
 
 # ビルド・デプロイ用の出力
 dist/
@@ -42,3 +44,7 @@ logs/
 test-results/
 playwright-report/
 dist-e2e/
+
+# Supabase CLI のローカル状態（リンク先など）
+supabase/.temp/
+supabase/.branches/

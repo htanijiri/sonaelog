@@ -1,0 +1,19 @@
+{
+  // sonaelog の配信（Workers の静的アセット）と、Supabase の休止防止（cron）。
+  // デプロイは npm run deploy（scripts/deploy.ts が .env の公開情報を --var で渡す）。
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "sonaelog",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "dist",
+    "not_found_handling": "single-page-application"
+  },
+  // 独自ドメインだけで公開し、*.workers.dev のアドレスは使わない
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "sonaelog.tanijiri.dev", "custom_domain": true }],
+  // 3日に1回（UTC 03:00 = 日本時間 12:00）。無料プランの休止は「1週間アクセスなし」なので余裕を持たせる
+  "triggers": { "crons": ["0 3 */3 * *"] },
+  "observability": { "enabled": true }
+}

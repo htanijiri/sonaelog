@@ -24,12 +24,41 @@
 - バックアップ：JSON / CSV の書き出し（オフラインでも可）
 
 ## 構成
-<!-- 実装後に書く -->
 ```
+src/
+  domain/      在庫の型・検証・期限判定・集計・検索・変更操作（画面にも DB にも依存しない）
+  backend/     データの出入り口（本番：Supabase、開発：疑似クラウド）
+  local/       端末内（IndexedDB）のスナップショット
+  state/       同期とログイン状態の管理（AppController）
+  ui/          画面
+demo/server.ts 開発用の疑似クラウド（Vite の開発・preview サーバーに載る。本番には入らない）
+supabase/      マイグレーション（テーブル・RLS・関数）と CLI 設定
+worker/        Cloudflare Worker（静的アセットの配信と、Supabase の休止防止 cron）
+scripts/       初期データ投入・アカウント追加・デプロイ・ビルド検査
+fixtures/      架空の見本データ（テスト・デモ用）
+data/          実データ（gitignore。data/checks/ に実データでの確認テスト）
+tests/  e2e/   ユニット（Vitest・PGlite）と E2E（Playwright）
 ```
 
 ## セットアップ
-<!-- 必要なツール、*.example からの設定ファイルの作り方、ローカルでの起動方法（000 の実装後に書く） -->
+必要なもの：Node.js 22 以上。
+
+```bash
+npm ci
+npx playwright install chromium
+npm run dev
+```
+`npm run dev` はデモモード（架空の見本データと開発用の疑似クラウド）で起動する。ログイン画面に架空のアカウントが表示される。
+本物の初期データをデモで見るときは `DEMO_DATA=data/initial-data.json npm run dev`（パソコンの中だけ）。
+
+テスト：
+```bash
+npm test             # ユニット（Vitest。DB は PGlite で検証）
+npm run test:e2e     # E2E（Playwright。オフライン再起動・2端末同期など）
+npm run lint && npm run typecheck
+```
+
+本番の Supabase につなぐ場合は `.env.example` を `.env` にコピーして値を入れる（手順は [docs/DEPLOY.md](docs/DEPLOY.md)）。
 
 ## デプロイ
-<!-- デプロイ先と一行の手順を書く。詳細は docs/DEPLOY.md に書く（009 の実装後に書く） -->
+Cloudflare Workers（`https://sonaelog.tanijiri.dev`）に `npm run deploy` で公開する。詳細は [docs/DEPLOY.md](docs/DEPLOY.md)。

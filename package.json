@@ -21,7 +21,7 @@
     "seed:validate": "tsx scripts/seed.ts validate",
     "seed:apply": "tsx scripts/seed.ts apply",
     "member:add": "tsx scripts/member-add.ts",
-    "deploy": "npm run build && npm run check:bundle && wrangler deploy"
+    "deploy": "tsx scripts/deploy.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -46,6 +46,7 @@
     "fake-indexeddb": "^6.2.7",
     "globals": "^17.14.0",
     "prettier": "^3.9.10",
+    "supabase": "^3.0.0",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",

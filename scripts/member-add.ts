@@ -1,5 +1,5 @@
 // 家族のアカウントを追加し、家庭に所属させる。パスワードは画面に表示されない入力で受け取る。
-//   npm run member:add -- --email someone@example.com
+//   npm run member:add                                    （メールアドレスとパスワードを順に聞く）
 //   npm run member:add -- --email someone@example.com --reset-password   （パスワードの再設定）
 //   npm run member:add -- --list                                          （所属人数の確認。メールアドレスは表示しない）
 import { parseArgs } from 'node:util'
@@ -70,9 +70,18 @@ if (values.list) {
   process.exit(0)
 }
 
-const email = values.email?.trim()
-if (!email) {
-  console.error('使い方：npm run member:add -- --email <メールアドレス> [--reset-password]')
+/** 入力を表示して1行読む */
+async function readLine(prompt: string): Promise<string> {
+  const { createInterface } = await import('node:readline/promises')
+  const rl = createInterface({ input: process.stdin, output: process.stdout })
+  const answer = await rl.question(prompt)
+  rl.close()
+  return answer
+}
+
+const email = (values.email ?? (await readLine('メールアドレス：'))).trim()
+if (!/^[^@\s]+@[^@\s]+$/.test(email)) {
+  console.error('メールアドレスの形式が正しくありません')
   process.exit(2)
 }
 

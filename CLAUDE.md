@@ -20,7 +20,6 @@ sonaelog：家族の防災備蓄を「何が・どこに・いくつ・いつ期
 - 期限が不明なものに日付を補完しない。`YYYY-MM` の期限を日付に変換して保存しない。期限判定は端末で Asia/Tokyo の日付から行う。製造年月から計算した期限は DB に保存せず、端末で毎回計算する（印字の期限があればそちらを優先）。
 - オフライン中・保存失敗時に「保存しました」と表示しない。端末にスナップショットがないときに「在庫 0 件」と表示しない。
 - Service Worker で Supabase の API 応答や認証トークンをキャッシュしない。
-<!-- プロジェクト固有の制約を追記する。例：「データはクラウドに送らない」「対象端末は Android の Chrome」「公開リポジトリにする予定」 -->
 
 ## 技術スタック・設計方針
 - UI：React + TypeScript + Vite（モバイルファースト、日本語 UI、素の CSS）。家族の端末は Android のみ。
@@ -78,15 +77,27 @@ sonaelog：家族の防災備蓄を「何が・どこに・いくつ・いつ期
 
 ## 消してはいけない設定（実際に失敗して入れたもの）
 一見冗長でも「整理」で削らない。理由は docs/TECH_NOTES.md に書く。
+- `vite.config.ts` の workbox `clientsClaim: true` / `skipWaiting: true`：消すと、初回に開いたページが Service Worker の制御下に入らず「ログインしてすぐ機内モード」で開けなくなる（vite-plugin-pwa 2.0 は既定で有効でない）。
+- `vite.config.ts` の `navigateFallbackDenylist` はデモビルドのときだけ：本番の `sw.js` に開発用のパスを入れない（`check:bundle` で検出される）。
+- workbox に `runtimeCaching` を足さない：Supabase の API 応答や認証トークンが Cache Storage に残る。
+- SQL の内部関数は `private` スキーマに置く：`public` に置くと PostgREST から直接呼べてしまう。
+- `.gitignore` の `!supabase/config.toml`：テンプレートの `config.toml` 無視ルールに対する例外。
 <!-- 失敗から入れた設定が出てきたら、ここに追記する -->
 
 ## コマンド
-<!-- 開発・実行・テスト・デプロイのコマンドを書く。テストがない場合は、変更後にどう確認するかを書く -->
 ```bash
+npm run dev                 # デモモード（架空の見本データ・疑似クラウド）
+npm test                    # ユニット（Vitest・PGlite）
+npm run test:e2e            # E2E（Playwright）
+npm run lint && npm run typecheck
+npm run build && npm run check:bundle   # 本番ビルドと成果物の検査
+npm run seed:validate -- data/initial-data.json
+DEMO_DATA=data/initial-data.json npx playwright test data/checks   # 実データの E2E（ローカル限定）
+python3 scripts/spec-status.py 009 完了 all   # 仕様書の状態を一括更新
 ```
 
 ## デプロイ
-<!-- デプロイ先と方法を一行で書く。手順の詳細は docs/DEPLOY.md に書く -->
+`npm run deploy`（Cloudflare Workers、`https://sonaelog.tanijiri.dev`）。DB の変更は `npx supabase db push --remote`。手順とロールバックは [docs/DEPLOY.md](docs/DEPLOY.md)。
 
 ## ドキュメントの書き分け
 | 何を | どこに |

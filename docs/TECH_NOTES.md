@@ -19,12 +19,57 @@
 | ログイン | メールアドレス＋パスワード | アプリ内で完結。Supabase 標準のメール送信は制限が厳しい | マジックリンク、OTP、OAuth |
 
 ## 2. アーキテクチャ
-<!-- 構成とデータの流れ -->
+```
+[Android の PWA]                                    [Supabase（正本）]
+  画面（React） ── AppController ── Backend ──RPC──▶ get_household_snapshot()  ← RLS（家庭への所属）
+                       │                    ──RPC──▶ apply_change()（security invoker、1トランザクション）
+                       ▼
+                 IndexedDB（Dexie）                  [Cloudflare Worker]
+                 家庭の完全なスナップショット1件          静的アセット配信（sonaelog.tanijiri.dev）
+                                                      cron 3日に1回 → ping()（休止防止）
+  Service Worker：アプリの画面だけをプリキャッシュ（API 応答は入れない）
+```
+- **読み取り**：起動時・前面に戻ったとき・「今すぐ同期」・オンライン復帰時に、`get_household_snapshot()` で家庭の全データを1回で取得 → zod で検証 → IndexedDB に1レコードとして put（原子的に置き換え）→ 画面は IndexedDB の内容を表示。検証や保存に失敗したら前回分を表示し続ける。
+- **書き込み**：オンラインかつログイン済みのときだけ `apply_change()` を呼ぶ。成功したらスナップショットを取り直して保存。保存に失敗したら「クラウドには保存済み・この端末は未更新」。
+- **閲覧の可否**は「端末に保存済みか」だけで決める。ログイン状態（signedIn／needsReauth／signedOut）は編集の可否にだけ使う。
+- **期限判定**は端末で、日本時間の今日と期限文字列から毎回計算（`src/domain/expiry.ts`）。製造年月からの期限も保存せずに計算する。
+- **開発用の疑似クラウド**（`demo/server.ts`）は `src/domain/changes.ts` の同じ規則で変更を処理する。SQL 版（`apply_change`）と同じ挙動であることを、同じ観点のテスト（`tests/domain/changes.test.ts` と `tests/db/changes.test.ts`）で確かめる。
 
 ## 3. ハマりどころと対処
-<!-- 症状 → 原因 → 対処 の順で書く。CLAUDE.md の「消してはいけない設定」の理由はここに書く -->
+### 初回のページが Service Worker の制御下に入らない（vite-plugin-pwa 2.0）
+- 症状：ログイン直後にオフラインにして再読み込みすると、ブラウザのオフライン画面になる。2回目以降の起動では問題ない。
+- 原因：Service Worker は activated になっていたが、`navigator.serviceWorker.controller` が null のまま（再読み込みで初めて制御下に入る）。vite-plugin-pwa 2.0 の `generateSW` では `clientsClaim` が既定で有効でない。
+- 対処：workbox に `clientsClaim: true`・`skipWaiting: true` を明示。E2E の待ち合わせも「activated」ではなく「controller がある」まで待つ。
+
+### `sw.js` に開発用のパスが入る
+- 症状：`check:bundle` が `dist/sw.js` の `__demo_api` を検出。
+- 原因：`navigateFallbackDenylist` に疑似クラウドのパスを常に書いていた。
+- 対処：デモビルドのときだけ設定する。
+
+### 内部用の SQL 関数が API から呼べてしまう
+- 症状（設計時に気づいた）：`public` スキーマの関数は PostgREST の `/rpc/` で呼べる。
+- 対処：`_insert_lot` などの内部関数を `private` スキーマに移し、`authenticated` には USAGE と EXECUTE だけを与える。テストで「public に `_` で始まる関数がない」ことを確認。
+
+### Supabase の「public のテーブルは既定で anon に公開」
+- 対処：マイグレーションの先頭で `alter default privileges ... revoke ... from anon` し、作ったテーブルにも明示的に revoke。PGlite のテスト環境では Supabase と同じ既定の GRANT を再現してから流し、revoke が効いていることを確かめる。
+
+### Playwright でのオフライン試験
+- `context.setOffline(true)` は送信済みのリクエストを止めない。「送信中に切断」は `page.route(...).abort('internetdisconnected')` で再現する。
+- `page.goto` は起動時の同期を走らせる（アプリとして正しい動き）。「同期前は古いまま」を確かめるときは画面内のリンクで移動する。
+- アクセシブルネームの部分一致：`name: '年月'` は「年月日」にも一致する。`exact: true` を付ける。
+
+### Supabase CLI 3.0
+- `supabase config push` は config.toml に書いた項目だけを反映する（書いていない項目は変えない）ので、最小限の config.toml で済む。
+- 非対話の実行では `--yes`（または `SUPABASE_YES`）が必要。
+
+### zsh で変数を単語分割しない
+- `for c in "db push" ...; do npx supabase $c --help` が、サブコマンドではなくルートのヘルプを表示した。zsh は未クォートの変数を単語分割しないため。関数の引数（`"$@"`）で渡す。
 
 ## 4. 「効かなかったこと」リスト
-<!-- 試したがうまくいかなかったこと。同じ失敗を繰り返さないために書く -->
+- typescript 7.0（latest）：typescript-eslint の peer が `<6.1.0` のため `~6.0.3` に固定した。
+- Service Worker の active を待つだけでは、オフライン試験の前提（ページが制御下）が満たされない（上記）。
 
 ## 5. 今後の課題
+- 期限通知・購入候補リスト・最低在庫量（BRIEF の将来拡張）。
+- 変更履歴の画面表示（監査イベントは記録済み）。
+- 本番ビルドの JS が約 520KB（supabase-js・zod・React）。オフライン用のプリキャッシュとしては許容範囲だが、必要なら分割する。

@@ -1,0 +1,12 @@
+# Supabase CLI の設定。`supabase config push` はここに書いた項目だけを本番に反映する（書いていない項目は変えない）。
+# 秘密の値は書かない。
+project_id = "sonaelog"
+
+[auth]
+site_url = "https://sonaelog.tanijiri.dev"
+additional_redirect_urls = ["https://sonaelog.tanijiri.dev"]
+# 誰でも登録できる新規登録を止める。アカウントは npm run member:add で追加する
+enable_signup = false
+
+[auth.email]
+enable_signup = false
