@@ -264,7 +264,7 @@
       "use_status": "non_drinking_candidate",
       "source": "user",
       "notes": "期限切れ。生活用水候補",
-      "liters_per_unit": null,
+      "liters_per_unit": 2,
       "kcal_per_unit": null,
       "components": null,
       "needs_review": false
@@ -282,7 +282,7 @@
       "use_status": "stored",
       "source": "user",
       "notes": "",
-      "liters_per_unit": null,
+      "liters_per_unit": 2,
       "kcal_per_unit": null,
       "components": null,
       "needs_review": false
@@ -300,7 +300,7 @@
       "use_status": "non_drinking_candidate",
       "source": "user",
       "notes": "",
-      "liters_per_unit": null,
+      "liters_per_unit": 2,
       "kcal_per_unit": null,
       "components": null,
       "needs_review": false

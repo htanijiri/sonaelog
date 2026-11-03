@@ -88,6 +88,14 @@ export function seedLotRow(lot: SeedFile['stock_lots'][number]) {
   }
 }
 
+/** seed_household() に渡す形 */
+export function seedPayload(data: SeedFile) {
+  return {
+    locations: data.locations.map(seedLocationRow),
+    lots: data.stock_lots.map(seedLotRow),
+  }
+}
+
 /** 疑似クラウド・テスト用に、seed から保管場所と明細を作る */
 export function seedToRows(
   data: SeedFile,
