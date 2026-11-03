@@ -27,8 +27,10 @@ export async function login(page: Page, user = USER_A) {
 export async function waitForServiceWorker(page: Page) {
   await page.waitForFunction(async () => {
     const reg = await navigator.serviceWorker?.getRegistration()
-    return Boolean(reg?.active)
+    return reg?.active?.state === 'activated'
   })
+  // 初回のページも再読み込みなしで制御下に入ること（clientsClaim）を確かめる
+  await page.waitForFunction(() => Boolean(navigator.serviceWorker.controller))
 }
 
 /** 一覧のカード（スマホ表示） */

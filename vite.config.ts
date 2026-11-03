@@ -38,6 +38,10 @@ export default defineConfig(({ command, mode }) => {
         navigateFallback: '/index.html',
         navigateFallbackDenylist: demo ? [/^\/__demo_api\//] : [],
         cleanupOutdatedCaches: true,
+        // 初回に開いたページもすぐ Service Worker の制御下に入れる。
+        // これがないと「ログインしてすぐ機内モード」にしたとき、再読み込みするまでオフラインで開けない
+        clientsClaim: true,
+        skipWaiting: true,
       },
     }),
   ]
