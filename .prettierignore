@@ -1,0 +1,8 @@
+dist
+dist-e2e
+node_modules
+docs
+journal
+brief
+data
+*.md
