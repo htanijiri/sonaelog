@@ -61,6 +61,25 @@
 ### Supabase CLI 3.0
 - `supabase config push` は config.toml に書いた項目だけを反映する（書いていない項目は変えない）ので、最小限の config.toml で済む。
 - 非対話の実行では `--yes`（または `SUPABASE_YES`）が必要。
+- `link` と `db push --remote` は、ログイン済みのアクセストークンで一時的なログインロールを作るので、データベースのパスワードは要らなかった。
+- `[auth.email] enable_signup` は非推奨の警告が出る。警告は `auth.email.enabled` を勧めるが、これを false にするとメールのログインそのものが止まる。新規登録の停止は `[auth] enable_signup = false` だけで足り、`/auth/v1/signup` が `signup_disabled` を返すことを確認した。
+- 新しく作ったアカウントには、既定のプロジェクトが自動で1つ作られることがある（無料枠の1つを使う。リージョンも東京とは限らない）。
+
+### CLI がどのアカウントでログインしているか
+- Supabase も Cloudflare も、CLI のログインは端末全体で1つ。以前に別の（仕事用など）アカウントでログインしていると、そのまま別アカウントにプロジェクトや Worker を作ってしまう。
+- 実際に、Cloudflare の CLI が別アカウントのままで `wrangler deploy` し、Worker のアップロード後に独自ドメインの設定で失敗した（`Can't infer zone from route … [code: 10082]`：そのアカウントにゾーンがない）。
+- 作成・デプロイの前に、`wrangler whoami` のアカウント名と、ゾーン API（`/client/v4/zones?name=<ドメイン>`）で対象のドメインが見えることを確かめる。Supabase は `supabase orgs list` で組織を確かめる。
+- ブラウザ側も前のアカウントでログインしていると、OAuth の承認がそのアカウントで通ってしまう。ログインの前にブラウザのアカウントを切り替えてもらう。
+
+### バンドル検査の誤検知（supabase-js の接頭辞判定）
+- `check:bundle` で `sb_secret_` という文字列を探していたら、supabase-js が鍵の種類を判定する `e.startsWith('sb_secret_')` に反応して、CI とデプロイが止まった（本物の鍵は入っていなかった）。
+- 「接頭辞のあとに鍵の本体（16文字以上）が続くもの」を正規表現で探すように変更。`.env` の鍵そのものとの完全一致の検査は残している。
+
+### Cloudflare Web Analytics のビーコン
+- tanijiri.dev のゾーンで Web Analytics の自動挿入が有効なため、配信した HTML に `static.cloudflareinsights.com` のスクリプトが挿入される。CSP（`script-src 'self'`）で読み込みが止まり、コンソールにエラーが1件出るが、解析データは送られないので、そのままにしている。
+
+### Workers の SPA フォールバック
+- `not_found_handling: single-page-application` は、ブラウザの画面遷移（`Sec-Fetch-Mode: navigate`）のときだけ `index.html` を返す。curl で `/items` を開くと 404 になるが、ブラウザでは 200。確認するときはヘッダを付ける。
 
 ### zsh で変数を単語分割しない
 - `for c in "db push" ...; do npx supabase $c --help` が、サブコマンドではなくルートのヘルプを表示した。zsh は未クォートの変数を単語分割しないため。関数の引数（`"$@"`）で渡す。

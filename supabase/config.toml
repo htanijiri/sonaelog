@@ -8,5 +8,3 @@ additional_redirect_urls = ["https://sonaelog.tanijiri.dev"]
 # 誰でも登録できる新規登録を止める。アカウントは npm run member:add で追加する
 enable_signup = false
 
-[auth.email]
-enable_signup = false

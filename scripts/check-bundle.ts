@@ -25,10 +25,11 @@ function lotNames(path: string): string[] {
 }
 
 const env = config({ quiet: true }).parsed ?? {}
-const needles: { label: string; value: string }[] = [
+const needles: { label: string; value: string | RegExp }[] = [
   ...lotNames('fixtures/sample-data.json').map((v) => ({ label: '見本データの品名', value: v })),
   ...lotNames('data/initial-data.json').map((v) => ({ label: '実データの品名', value: v })),
-  { label: 'secret key の接頭辞', value: 'sb_secret_' },
+  // 接頭辞だけ（supabase-js が鍵の種類を判定する文字列）は対象外。接頭辞のあとに鍵の本体が続くものを探す
+  { label: 'secret key の形をした値', value: /sb_secret_[A-Za-z0-9_-]{16,}/ },
   { label: 'service_role', value: 'service_role' },
   { label: '疑似クラウドの API', value: '__demo_api' },
 ]
@@ -39,7 +40,8 @@ for (const f of files(dir)) {
   const text = readFileSync(f, 'utf8')
   for (const n of needles) {
     // 秘密の値そのものは表示しない
-    if (text.includes(n.value)) problems.push(`${f}: ${n.label}${n.label.includes('品名') ? `「${n.value}」` : ''} が含まれています`)
+    const hit = typeof n.value === 'string' ? text.includes(n.value) : n.value.test(text)
+    if (hit) problems.push(`${f}: ${n.label}${n.label.includes('品名') ? `「${String(n.value)}」` : ''} が含まれています`)
   }
 }
 if (problems.length) {

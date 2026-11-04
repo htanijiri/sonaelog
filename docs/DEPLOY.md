@@ -39,12 +39,12 @@ npx supabase login
 npx supabase orgs list
 npx supabase projects list
 ```
-無料プランは1つの組織で同時に動かせるプロジェクトが2つまで。
+無料プランは1つの組織で同時に動かせるプロジェクトが2つまで。**組織が自分のもの（仕事用などの別アカウントでない）ことをここで確かめる。**
 
 ```bash
 npx supabase projects create sonaelog --org-id <組織ID> --region ap-northeast-1
 ```
-データベースのパスワードを聞かれたら入力する（実施者：ユーザー）。
+データベースのパスワードを聞かれたら入力する（実施者：ユーザー）。パスワードはパスワード管理アプリなどに保存する。以降の `link`・`db push --remote` はアクセストークンで通るので、ふだんは入力しない。
 
 ```bash
 npx supabase link --project-ref <プロジェクトの ref>
@@ -61,7 +61,9 @@ npm run member:add
 `member:add` はメールアドレスとパスワード（非表示）を聞く。大人2人分、2回実行する（実施者：ユーザー。理由：パスワードは本人が決めて入力する）。
 
 ### 2-3. アプリの公開
+デプロイの前に、Cloudflare の CLI が tanijiri.dev を持つアカウントでログインしていることを確かめる（別アカウントのままだと、そのアカウントに Worker ができてしまい、独自ドメインの設定で失敗する）。
 ```bash
+npx wrangler whoami
 npm run deploy
 ```
 `npm run build` → `check:bundle`（見本データ・実データ・秘密の鍵が入っていないか）→ `wrangler deploy`。
@@ -69,7 +71,8 @@ npm run deploy
 
 ## 3. デプロイ後の動作確認
 Claude がコマンドで確認する項目：
-- [ ] `https://sonaelog.tanijiri.dev` が HTTPS で開き、manifest と `sw.js` が返る
+- [ ] `https://sonaelog.tanijiri.dev` が HTTPS で開き、manifest と `sw.js` が返る（画面遷移の確認は `-H 'Sec-Fetch-Mode: navigate' -H 'Accept: text/html'` を付ける）
+- [ ] `*.workers.dev` が 404
 - [ ] 公開キーだけで業務テーブルを読むと拒否される（`curl …/rest/v1/inventory_lots`）
 - [ ] 新規登録（`/auth/v1/signup`）が拒否される
 - [ ] `ping` RPC が `true` を返す
