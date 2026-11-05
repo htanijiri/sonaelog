@@ -91,6 +91,11 @@ Claude がコマンドで確認する項目：
 ## 5. ロールバック
 ```bash
 npx wrangler deployments list
-npx wrangler rollback <デプロイ ID>
+npx wrangler rollback <バージョン ID> --message "戻す理由" -y
 ```
+- `deployments list` の `Version(s)` に出る ID を指定する。戻した版の Worker の変数（`SUPABASE_URL` など）も一緒に戻る。
+- 2026-11-05 に、同じ内容で再デプロイしてから前の版へ戻し、公開アドレスが 200 を返すことを確かめた。
+- アプリの端末側は、Service Worker が戻した版を新しい版として取り込む（開き直すと切り替わる）。
+- 休止防止の cron は版に含まれないので、ロールバックしても変わらない。
+- 休止防止を手元で試す：`npx wrangler dev --test-scheduled --var SUPABASE_URL:… --var SUPABASE_PUBLISHABLE_KEY:…` を起動し、`curl "http://localhost:8787/__scheduled?cron=0+3+*/3+*+*"`。
 DB のマイグレーションは自動では戻らない。戻す SQL を新しいマイグレーションとして書いて `db push` する。
