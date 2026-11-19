@@ -319,6 +319,68 @@ ul.plain {
   background: #f3e9fa;
 }
 
+/* ---- 味の感想（spec 010） ---- */
+.badge-taste {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.badge-taste-again {
+  color: var(--ok);
+  background: #e7f3ea;
+}
+.badge-taste-ok {
+  color: var(--muted);
+}
+.badge-taste-never {
+  color: var(--warn);
+  background: var(--warn-bg);
+}
+.taste-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.taste-section .section-title {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.taste-view {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.taste-view p {
+  margin: 0;
+}
+.taste-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.taste-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.taste-row-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.taste-row-name {
+  font-weight: 600;
+}
+.taste-hint {
+  margin: 0;
+}
+
 /* ---- ホーム ---- */
 .counters {
   display: grid;

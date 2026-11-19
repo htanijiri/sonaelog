@@ -2,7 +2,8 @@
 
 import { compareDates, type PlainDate } from './dates'
 import { EXPIRY_STATUS_ORDER, expiryInfo, type ExpiryInfo, type ExpiryStatus } from './expiry'
-import type { Category, InventoryLot, Snapshot, StorageLocation, UseStatus } from './types'
+import { reviewForLot, reviewIndex, reviewSearchText } from './foodReviews'
+import type { Category, FoodReview, InventoryLot, Snapshot, StorageLocation, UseStatus } from './types'
 
 /** 全角・半角、カタカナ・ひらがな、大文字・小文字の違いをなくす */
 export function normalizeText(s: string): string {
@@ -28,10 +29,13 @@ export interface ItemRow {
   lot: InventoryLot
   location: StorageLocation | undefined
   expiry: ExpiryInfo
+  /** 食料品の味の感想（spec 010）。食料品以外・感想なしは undefined */
+  foodReview: FoodReview | undefined
 }
 
 export function filterItems(snapshot: Snapshot, filter: ItemFilter, today: PlainDate): ItemRow[] {
   const locations = new Map(snapshot.locations.map((l) => [l.id, l]))
+  const reviews = reviewIndex(snapshot.food_reviews ?? [])
   const terms = normalizeText(filter.q ?? '')
     .split(/\s+/)
     .filter(Boolean)
@@ -41,13 +45,15 @@ export function filterItems(snapshot: Snapshot, filter: ItemFilter, today: Plain
     if (filter.location && lot.location_id !== filter.location) continue
     if (filter.useStatus && lot.use_status !== filter.useStatus) continue
     if (filter.review && !lot.needs_review) continue
+    const foodReview = reviewForLot(reviews, lot)
     if (terms.length) {
-      const hay = normalizeText(`${lot.name} ${lot.notes}`)
+      // 食料品は味の感想（評価の表示名とコメント）も検索の対象にする
+      const hay = normalizeText(`${lot.name} ${lot.notes} ${reviewSearchText(foodReview)}`)
       if (!terms.every((t) => hay.includes(t))) continue
     }
     const expiry = expiryInfo(lot, today)
     if (filter.expiry && expiry.status !== filter.expiry) continue
-    rows.push({ lot, location: locations.get(lot.location_id), expiry })
+    rows.push({ lot, location: locations.get(lot.location_id), expiry, foodReview })
   }
   return sortItems(rows, filter.sort ?? 'expiry')
 }

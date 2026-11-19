@@ -1,0 +1,9 @@
+{
+  "_comment": "デモモード（疑似クラウド）用の架空の味の感想。fixtures/sample-data.json と組み合わせて使う。実在の品・家庭とは関係ない",
+  "food_reviews": [
+    { "name": "見本の保存ご飯・五目", "rating": "again", "comment": "子どもも完食。お湯で15分" },
+    { "name": "見本の缶入りパン", "rating": "ok", "comment": "少し甘い" },
+    { "name": "見本のおかゆ", "rating": "never", "comment": "味が薄い。買い替えるなら別の品" },
+    { "name": "見本の乾パン", "rating": "again", "comment": "氷砂糖つきで子どもに人気" }
+  ]
+}

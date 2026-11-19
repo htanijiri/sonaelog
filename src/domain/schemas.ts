@@ -6,6 +6,8 @@ import {
   CATEGORIES,
   EXPIRY_CHECKS,
   EXPIRY_KINDS,
+  FOOD_RATINGS,
+  FOOD_REVIEW_COMMENT_MAX,
   LOCATION_KINDS,
   PRECISIONS,
   SOURCES,
@@ -142,6 +144,17 @@ export const lotSchema = lotInputObject
   })
   .superRefine(checkDateRules)
 
+export const foodReviewSchema = z.object({
+  id: z.string().min(1),
+  name_key: z.string().min(1),
+  display_name: z.string().min(1),
+  rating: z.enum(FOOD_RATINGS).nullable(),
+  comment: z.string().max(FOOD_REVIEW_COMMENT_MAX),
+  created_at: z.string(),
+  updated_at: z.string(),
+  updated_by: z.string().nullable(),
+})
+
 export const snapshotSchema = z
   .object({
     format: z.literal('sonaelog-snapshot'),
@@ -152,6 +165,8 @@ export const snapshotSchema = z
     captured_at: z.string(),
     locations: z.array(locationSchema),
     lots: z.array(lotSchema),
+    // spec 010 で追加。項目がない古いスナップショットは空として扱う
+    food_reviews: z.array(foodReviewSchema).default([]),
   })
   .superRefine((s, ctx) => {
     const ids = new Set(s.locations.map((l) => l.id))

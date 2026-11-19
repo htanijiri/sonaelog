@@ -127,7 +127,7 @@ function sampleSnapshot(): Snapshot {
   const data = validateSeed(JSON.parse(readFileSync('fixtures/sample-data.json', 'utf8'))).data!
   let n = 0
   const { locations, lots } = seedToRows(data, () => `id-${++n}`, '2026-11-03T00:00:00Z')
-  return { format: 'sonaelog-snapshot', version: 1, household_id: 'h', household_name: '見本', revision: 1, captured_at: '', locations, lots }
+  return { format: 'sonaelog-snapshot', version: 1, household_id: 'h', household_name: '見本', revision: 1, captured_at: '', locations, lots, food_reviews: [] }
 }
 const bySeed = (s: Snapshot, code: string) => s.lots.find((l) => l.seed_code === code)!
 

@@ -91,6 +91,23 @@ export interface InventoryLot {
   updated_at: string
 }
 
+/** 食料品の味の感想（spec 010）。明細ではなく品名（正規化キー）ごとに1つ、家庭で共有する */
+export const FOOD_RATINGS = ['again', 'ok', 'never'] as const
+export type FoodRating = (typeof FOOD_RATINGS)[number]
+export const FOOD_REVIEW_COMMENT_MAX = 500
+
+export interface FoodReview {
+  id: string
+  /** 品名の正規化キー（src/domain/foodReviews.ts の foodNameKey） */
+  name_key: string
+  display_name: string
+  rating: FoodRating | null
+  comment: string
+  created_at: string
+  updated_at: string
+  updated_by: string | null
+}
+
 /** サーバーから読み取った、家庭1つ分の完全な在庫スナップショット */
 export interface Snapshot {
   format: 'sonaelog-snapshot'
@@ -101,6 +118,8 @@ export interface Snapshot {
   captured_at: string
   locations: StorageLocation[]
   lots: InventoryLot[]
+  /** 味の感想。項目がない古いスナップショットは空として読み込む */
+  food_reviews: FoodReview[]
 }
 
 /** 追加・更新のときに利用者が入力する項目（id や日時はサーバーが決める） */

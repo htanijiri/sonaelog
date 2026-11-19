@@ -3,9 +3,9 @@
 // （E2E で「家族A が追加 → 家族B が同期」を再現するため）。本番のビルドには入らない。
 
 import { randomUUID } from 'node:crypto'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import type { Plugin } from 'vite'
 import {
   applyChangeToState,
@@ -14,7 +14,9 @@ import {
   type Change,
   type HouseholdState,
 } from '../src/domain/changes'
+import { foodNameKey } from '../src/domain/foodReviews'
 import { seedToRows, validateSeed } from '../src/domain/seed'
+import type { FoodRating, FoodReview } from '../src/domain/types'
 
 export const DEMO_USERS = [
   { id: '00000000-0000-4000-8000-00000000000a', email: 'a@example.test', password: 'demo-pass-a' },
@@ -40,6 +42,23 @@ interface Control {
   delayMs: number
 }
 
+/** 見本データと組み合わせる架空の味の感想（spec 010）。見本データ以外（DEMO_DATA で実データを指定したとき）は読み込まない */
+function loadReviews(dataPath: string, now: string): FoodReview[] {
+  const path = join(dirname(dataPath), 'sample-food-reviews.json')
+  if (!dataPath.endsWith('sample-data.json') || !existsSync(path)) return []
+  const raw = JSON.parse(readFileSync(path, 'utf8')) as { food_reviews: { name: string; rating: FoodRating | null; comment: string }[] }
+  return raw.food_reviews.map((r) => ({
+    id: randomUUID(),
+    name_key: foodNameKey(r.name),
+    display_name: r.name,
+    rating: r.rating,
+    comment: r.comment,
+    created_at: now,
+    updated_at: now,
+    updated_by: DEMO_USERS[1]!.id,
+  }))
+}
+
 function loadState(dataPath: string): HouseholdState {
   const raw = JSON.parse(readFileSync(dataPath, 'utf8'))
   const result = validateSeed(raw)
@@ -54,6 +73,7 @@ function loadState(dataPath: string): HouseholdState {
     revision: 1,
     locations: locations.map((l) => ({ ...l, archived_at: null })),
     lots: lots.map((l) => ({ ...l, archived_at: null, archive_reason: null })),
+    food_reviews: loadReviews(dataPath, now),
     events: [],
   }
 }

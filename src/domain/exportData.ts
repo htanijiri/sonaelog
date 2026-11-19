@@ -1,6 +1,7 @@
 // バックアップの書き出し（JSON / CSV）。端末に保存済みのスナップショットから作るので、オフラインでも使える。
 
 import type { PlainDate } from './dates'
+import { FOOD_RATING_LABEL, reviewForLot, reviewIndex } from './foodReviews'
 import { effectiveExpiry, EXPIRY_STATUS_LABEL, expiryInfo } from './expiry'
 import {
   CATEGORY_LABEL,
@@ -24,6 +25,8 @@ export function exportJson(snapshot: Snapshot, exportedAt: string): string {
       household_name: snapshot.household_name,
       locations: snapshot.locations,
       lots: snapshot.lots,
+      // 在庫がなくなった品の感想も含めて、すべて書き出す
+      food_reviews: snapshot.food_reviews ?? [],
     },
     null,
     2,
@@ -56,6 +59,8 @@ const HEADER = [
   '1本あたりL',
   '公称使用回数',
   'メモ',
+  '味の評価',
+  '味の感想',
   'セット内訳',
   '最終更新',
 ]
@@ -63,8 +68,10 @@ const HEADER = [
 /** Excel で文字化けしないよう UTF-8 BOM 付き・CRLF で返す */
 export function exportCsv(snapshot: Snapshot, today: PlainDate): string {
   const locations = new Map(snapshot.locations.map((l) => [l.id, l]))
+  const reviews = reviewIndex(snapshot.food_reviews ?? [])
   const rows = snapshot.lots.map((lot) => {
     const loc = locations.get(lot.location_id)
+    const review = reviewForLot(reviews, lot)
     const eff = effectiveExpiry(lot)
     return [
       loc?.display_name ?? '',
@@ -87,6 +94,8 @@ export function exportCsv(snapshot: Snapshot, today: PlainDate): string {
       lot.liters_per_unit ?? '',
       lot.uses_per_unit ?? '',
       lot.notes,
+      review?.rating ? FOOD_RATING_LABEL[review.rating] : '',
+      review?.comment ?? '',
       (lot.components ?? []).map((c) => `${c.name}×${c.quantity_per_box}/${c.unit}`).join(';'),
       lot.updated_at,
     ]

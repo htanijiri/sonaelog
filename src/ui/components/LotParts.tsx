@@ -4,6 +4,7 @@ import { EXPIRY_STATUS_LABEL, formatExpiry, type ExpiryStatus } from '../../doma
 import { label, USE_STATUS_LABEL } from '../../domain/labels'
 import type { ItemRow } from '../../domain/search'
 import type { UseStatus } from '../../domain/types'
+import { FoodRatingBadge } from './FoodReviewParts'
 
 /** 期限の状態。色だけに頼らず文字で出す */
 export function ExpiryBadge({ status }: { status: ExpiryStatus }) {
@@ -25,7 +26,7 @@ export function formatQuantity(q: number, unit: string): string {
 
 /** 一覧のカード（スマホ）。同じ品名でも期限・場所が違えば別のカード */
 export function LotCard({ row, showLocation = true }: { row: ItemRow; showLocation?: boolean }) {
-  const { lot, location, expiry } = row
+  const { lot, location, expiry, foodReview } = row
   const exp = formatExpiry(lot)
   return (
     <li>
@@ -45,6 +46,7 @@ export function LotCard({ row, showLocation = true }: { row: ItemRow; showLocati
           <ExpiryBadge status={expiry.status} />
           <UseStatusBadge status={lot.use_status} />
           {lot.needs_review && <ReviewBadge />}
+          <FoodRatingBadge rating={foodReview?.rating ?? null} />
         </div>
       </Link>
     </li>
@@ -65,7 +67,7 @@ export function LotTable({ rows, showLocation = true }: { rows: ItemRow[]; showL
         </tr>
       </thead>
       <tbody>
-        {rows.map(({ lot, location, expiry }) => {
+        {rows.map(({ lot, location, expiry, foodReview }) => {
           const exp = formatExpiry(lot)
           return (
             <tr key={lot.id} data-testid="lot-row">
@@ -82,6 +84,7 @@ export function LotTable({ rows, showLocation = true }: { rows: ItemRow[]; showL
                 <ExpiryBadge status={expiry.status} />
                 <UseStatusBadge status={lot.use_status} />
                 {lot.needs_review && <ReviewBadge />}
+                <FoodRatingBadge rating={foodReview?.rating ?? null} />
               </td>
             </tr>
           )

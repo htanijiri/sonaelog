@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router'
 import type { Disposition } from '../../domain/changes'
 import { formatDateTime, formatDateValue } from '../../domain/dates'
 import { expiryInfo, formatExpiry } from '../../domain/expiry'
+import { isFood, reviewForLot, reviewIndex } from '../../domain/foodReviews'
 import {
   CATEGORY_LABEL,
   EXPIRY_CHECK_LABEL,
@@ -17,6 +18,7 @@ import { useApp } from '../../state/AppContext'
 import { Dialog } from '../components/Dialog'
 import { ExpiryBadge, formatQuantity, ReviewBadge, UseStatusBadge } from '../components/LotParts'
 import { BackButton } from '../components/BackButton'
+import { FoodRatingBadge, FoodReviewSection } from '../components/FoodReviewParts'
 import { useChange } from '../useChange'
 
 type DialogKind = 'move' | 'consume' | 'split' | 'review' | null
@@ -38,6 +40,7 @@ export function ItemDetail() {
   const location = snapshot!.locations.find((l) => l.id === lot.location_id)
   const info = expiryInfo(lot, today)
   const exp = formatExpiry(lot)
+  const foodReview = reviewForLot(reviewIndex(snapshot!.food_reviews), lot)
 
   return (
     <div className="stack">
@@ -47,6 +50,7 @@ export function ItemDetail() {
         <ExpiryBadge status={info.status} />
         <UseStatusBadge status={lot.use_status} />
         {lot.needs_review && <ReviewBadge />}
+        <FoodRatingBadge rating={foodReview?.rating ?? null} />
       </div>
 
       <dl className="facts detail" data-testid="lot-detail">
@@ -119,6 +123,8 @@ export function ItemDetail() {
         <dt>最終更新</dt>
         <dd>{formatDateTime(lot.updated_at)}</dd>
       </dl>
+
+      {isFood(lot) && <FoodReviewSection name={lot.name} review={foodReview} editable={editable} />}
 
       <section aria-label="操作" className="actions">
         {!editable && <p className="muted">オフライン、またはログインしていないため編集できません。</p>}

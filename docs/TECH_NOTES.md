@@ -84,6 +84,14 @@
 ### zsh で変数を単語分割しない
 - `for c in "db push" ...; do npx supabase $c --help` が、サブコマンドではなくルートのヘルプを表示した。zsh は未クォートの変数を単語分割しないため。関数の引数（`"$@"`）で渡す。
 
+### 既存の RPC に操作を足す（spec 010）
+- 大きな `apply_change` を `create or replace` で書き写すと差分が読めなくなる。`alter function public.apply_change(jsonb) set schema private` → `rename to _apply_change_core` で内部に移し、新しい `public.apply_change` が新しい操作だけを処理して残りを委ねる形にした。権限は移した関数にも `authenticated` の execute が要る（security invoker のため）。
+- スナップショットに項目を足すときは version を上げず、zod で `.default([])` にした。古いアプリは知らない項目を捨て、新しいアプリは古い保存分を空として読む。端末内の保存分は検査だけして元の値を返していたため、検査後の値（既定値で補われたもの）を返すように変えた。
+- 品名の正規化キーは SQL（`normalize(…, NFKC)`）と TypeScript（`String.prototype.normalize('NFKC')`）で同じ規則にし、PGlite で両者を突き合わせるテストを置いた。PGlite でも `normalize` は使える。
+
+### Supabase のセキュリティ検査の Auth の警告
+- 2026-11-19 の `db advisors` で「Leaked Password Protection Disabled」（WARN）が出た。データベースではなく Auth の設定で、構築時（2026-11-04）には出ていなかった。対応はユーザーと相談する。
+
 ## 4. 「効かなかったこと」リスト
 - typescript 7.0（latest）：typescript-eslint の peer が `<6.1.0` のため `~6.0.3` に固定した。
 - Service Worker の active を待つだけでは、オフライン試験の前提（ページが制御下）が満たされない（上記）。

@@ -2,7 +2,9 @@
 // 開発は疑似クラウドがこのファイルの applyChangeToState() で同じ規則に従って処理する。
 
 import { lotInputSchema, formatIssues } from './schemas'
-import type { InventoryLot, LocationKind, LotInput, Snapshot, StorageLocation } from './types'
+import { foodNameKey } from './foodReviews'
+import { FOOD_RATINGS, FOOD_REVIEW_COMMENT_MAX } from './types'
+import type { FoodRating, FoodReview, InventoryLot, LocationKind, LotInput, Snapshot, StorageLocation } from './types'
 
 export type Disposition = 'consumed' | 'discarded'
 
@@ -41,6 +43,14 @@ export type Change =
       children: LotInput[]
     }
   | { type: 'confirm_review'; lot_id: string; expected_updated_at: string; note?: string }
+  | {
+      /** 味の感想（spec 010）。評価もコメントも空なら削除。expected_updated_at が null なら「まだない」前提 */
+      type: 'set_food_review'
+      name: string
+      rating: FoodRating | null
+      comment: string
+      expected_updated_at: string | null
+    }
   | {
       type: 'upsert_location'
       location_id?: string
@@ -88,6 +98,7 @@ export interface HouseholdState {
   revision: number
   locations: StoredLocation[]
   lots: StoredLot[]
+  food_reviews: FoodReview[]
   events: ChangeEvent[]
 }
 
@@ -270,6 +281,50 @@ export function applyChangeToState(state: HouseholdState, change: Change, ctx: C
       record('confirm_review', { lot_id: lot.id }, { needs_review: lot.needs_review, source: lot.source }, { needs_review: false, source })
       break
     }
+    case 'set_food_review': {
+      const key = foodNameKey(change.name)
+      const name = change.name.normalize('NFKC').trim()
+      const comment = change.comment.trim()
+      if (!key) throw new ChangeError('validation', '品名を入れてください')
+      if (change.rating !== null && !FOOD_RATINGS.includes(change.rating)) {
+        throw new ChangeError('validation', '評価は「また買う」「ふつう」「もう買わない」から選んでください')
+      }
+      if ([...comment].length > FOOD_REVIEW_COMMENT_MAX) {
+        throw new ChangeError('validation', `コメントは${FOOD_REVIEW_COMMENT_MAX}文字までにしてください`)
+      }
+      const cur = state.food_reviews.find((r) => r.name_key === key)
+      if ((change.expected_updated_at === null) !== (cur === undefined) || (cur && cur.updated_at !== change.expected_updated_at)) {
+        throw new ChangeError('conflict', 'ほかの家族が先に感想を変更しました。最新を読み込んでからやり直してください')
+      }
+      if (!cur && !state.lots.some((l) => l.archived_at === null && l.category === 'food' && foodNameKey(l.name) === key)) {
+        throw new ChangeError('validation', '食料品の在庫にない品名には感想を書けません')
+      }
+      const value = { name, rating: change.rating, comment }
+      if (change.rating === null && comment === '') {
+        if (!cur) return // 空の感想は作らない（SQL と同じく何も変えない）
+        mutations.push(() => state.food_reviews.splice(state.food_reviews.indexOf(cur), 1))
+        record('food_review_delete', {}, { name: cur.display_name, rating: cur.rating, comment: cur.comment }, null)
+      } else if (cur) {
+        mutations.push(() =>
+          Object.assign(cur, { display_name: name, rating: change.rating, comment, updated_at: ctx.now, updated_by: ctx.actor }),
+        )
+        record('food_review_update', {}, { name: cur.display_name, rating: cur.rating, comment: cur.comment }, value)
+      } else {
+        const review: FoodReview = {
+          id: ctx.newId(),
+          name_key: key,
+          display_name: name,
+          rating: change.rating,
+          comment,
+          created_at: ctx.now,
+          updated_at: ctx.now,
+          updated_by: ctx.actor,
+        }
+        mutations.push(() => state.food_reviews.push(review))
+        record('food_review_create', {}, null, value)
+      }
+      break
+    }
     case 'upsert_location': {
       const name = change.display_name.trim()
       if (!name) throw new ChangeError('validation', '保管場所の名前を入れてください')
@@ -336,5 +391,6 @@ export function stateToSnapshot(state: HouseholdState, now: string): Snapshot {
     lots: state.lots
       .filter((l) => l.archived_at === null)
       .map(({ archived_at: _a, archive_reason: _r, ...l }) => ({ ...l })),
+    food_reviews: [...state.food_reviews].sort((a, b) => a.name_key.localeCompare(b.name_key)).map((r) => ({ ...r })),
   }
 }

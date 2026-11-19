@@ -40,7 +40,7 @@ export function Items() {
           <span className="sr-only">キーワード</span>
           <input
             type="search"
-            placeholder="品名・メモで検索（例：単3）"
+            placeholder="品名・メモ・味の感想で検索（例：単3）"
             value={filter.q ?? ''}
             onChange={(e) => update({ q: e.target.value || undefined })}
             aria-label="キーワード"
@@ -115,6 +115,10 @@ export function Items() {
           )}
         </details>
       </div>
+
+      <p className="small">
+        <Link to="/food-reviews">味の感想の一覧（食べ切った品も含む）</Link>
+      </p>
 
       <p className="muted small" data-testid="result-count">
         {rows.length} 明細

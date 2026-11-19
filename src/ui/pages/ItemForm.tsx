@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import type { Disposition } from '../../domain/changes'
 import { effectiveExpiry, formatExpiry } from '../../domain/expiry'
+import { reviewForLot, reviewIndex } from '../../domain/foodReviews'
 import { CATEGORY_LABEL, EXPIRY_CHECK_LABEL, EXPIRY_KIND_LABEL, USE_STATUS_LABEL } from '../../domain/labels'
 import { formatIssues, lotInputSchema } from '../../domain/schemas'
 import { monthsLabel, shelfLifeSuggestions } from '../../domain/shelfLifePresets'
@@ -18,6 +19,7 @@ import {
 } from '../../domain/types'
 import { useApp } from '../../state/AppContext'
 import { BackButton } from '../components/BackButton'
+import { FoodReviewView } from '../components/FoodReviewParts'
 import { useChange } from '../useChange'
 
 type DateMode = 'none' | Precision
@@ -143,6 +145,8 @@ export function ItemForm() {
   const input = toInput(f, editing ? editing.source : 'user', base?.components ?? null)
   const preview = effectiveExpiry(input)
   const suggestions = shelfLifeSuggestions(f.name, snapshot!.lots, editing?.id)
+  // 同じ品名の味の感想があれば、買い直す前の参考に出す（spec 010）
+  const pastReview = reviewForLot(reviewIndex(snapshot!.food_reviews), { name: f.name, category: f.category })
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -213,6 +217,14 @@ export function ItemForm() {
           ))}
         </select>
       </label>
+      {pastReview && (
+        <div className="notice taste-hint" data-testid="taste-hint">
+          <p className="small">
+            <strong>この品の味の感想</strong>
+          </p>
+          <FoodReviewView review={pastReview} />
+        </div>
+      )}
       <label className="field">
         <span>保管場所</span>
         <select value={f.location_id} onChange={(e) => set('location_id', e.target.value)}>

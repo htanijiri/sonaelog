@@ -12,6 +12,7 @@ function state(): HouseholdState {
     revision: 1,
     locations: s.locations.map((l) => ({ ...l, archived_at: null })),
     lots: s.lots.map((l) => ({ ...l, archived_at: null, archive_reason: null })),
+    food_reviews: [],
     events: [],
   }
 }

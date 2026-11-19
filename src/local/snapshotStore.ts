@@ -79,7 +79,8 @@ export function migrateStored(row: Record<string, unknown>): StoredSnapshot | nu
     }
   }
   const parsed = snapshotSchema.safeParse(current.snapshot)
-  return parsed.success ? current : null
+  // 検査済みの形で返す（spec 010 の food_reviews のように、後から増えた項目は既定値で補われる）
+  return parsed.success ? { ...current, snapshot: parsed.data as Snapshot } : null
 }
 
 export class SnapshotStore {

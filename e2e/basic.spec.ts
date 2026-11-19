@@ -15,7 +15,7 @@ test('000 AC1：デモモードでログインすると見本データの一覧�
 test('006 AC8：375px 幅で横スクロールが出ず、主要ボタンが 44px 以上', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 })
   await login(page)
-  for (const path of ['/', '/items', '/locations', '/review', '/settings']) {
+  for (const path of ['/', '/items', '/locations', '/review', '/settings', '/food-reviews']) {
     await page.goto(path)
     await expect(page.getByTestId('local-status')).toBeVisible()
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
@@ -35,7 +35,7 @@ test('006 AC8：375px 幅で横スクロールが出ず、主要ボタンが 44p
 
 test('006 AC10：主要画面に重大なアクセシビリティ違反がない', async ({ page }) => {
   await login(page)
-  for (const path of ['/', '/items', '/locations', '/settings']) {
+  for (const path of ['/', '/items', '/locations', '/settings', '/food-reviews']) {
     await page.goto(path)
     await expect(page.getByTestId('local-status')).toBeVisible()
     const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()

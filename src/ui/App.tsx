@@ -3,6 +3,7 @@ import { useApp } from '../state/AppContext'
 import { StatusBar } from './components/StatusBar'
 import { ToastProvider } from './components/Toast'
 import { Home } from './pages/Home'
+import { FoodReviews } from './pages/FoodReviews'
 import { ItemDetail } from './pages/ItemDetail'
 import { ItemForm } from './pages/ItemForm'
 import { Items } from './pages/Items'
@@ -57,6 +58,7 @@ function Shell() {
         <Route path="/items/new" element={<ItemForm />} />
         <Route path="/items/:id" element={<ItemDetail />} />
         <Route path="/items/:id/edit" element={<ItemForm />} />
+        <Route path="/food-reviews" element={<FoodReviews />} />
         <Route path="/locations" element={<Locations />} />
         <Route path="/locations/:id" element={<LocationDetail />} />
         <Route path="/review" element={<Review />} />
