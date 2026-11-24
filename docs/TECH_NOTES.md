@@ -90,7 +90,11 @@
 - 品名の正規化キーは SQL（`normalize(…, NFKC)`）と TypeScript（`String.prototype.normalize('NFKC')`）で同じ規則にし、PGlite で両者を突き合わせるテストを置いた。PGlite でも `normalize` は使える。
 
 ### Supabase のセキュリティ検査の Auth の警告
-- 2026-11-19 の `db advisors` で「Leaked Password Protection Disabled」（WARN）が出た。データベースではなく Auth の設定で、構築時（2026-11-04）には出ていなかった。対応はユーザーと相談する。
+- 2026-11-19 の `db advisors` で「Leaked Password Protection Disabled」（WARN）が出た。データベースではなく Auth の設定で、構築時（2026-11-04）には出ていなかった。
+- 調べた結果（2026-11-24）：Supabase の文書に「Leaked password protection is available on the Pro Plan and above.」とあり、無料プランでは有効にできない。CLI の config.toml にも設定項目がない。
+- 対応：無料プランのまま（費用 0 円の合意）とし、この警告は受け入れる。代わりに `[auth] minimum_password_length = 8` を config.toml に書いて反映した（それまでは既定の 6。アカウント追加のスクリプトはもともと 8 文字以上を求めていたので、既存のパスワードには影響しない）。
+- 受け入れてよい理由：新規登録は無効で、アカウントは `npm run member:add` で家族の大人だけが作る。パスワードを決めるのも本人。
+- 文字の種類の条件（英字・数字・記号など）は足していない。Supabase の文書では、条件を満たさない既存のパスワードはログイン時に `WeakPasswordError` になるとされており、既存のアカウントに影響しうるため。
 
 ## 4. 「効かなかったこと」リスト
 - typescript 7.0（latest）：typescript-eslint の peer が `<6.1.0` のため `~6.0.3` に固定した。

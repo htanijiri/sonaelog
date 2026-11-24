@@ -7,4 +7,6 @@ site_url = "https://sonaelog.tanijiri.dev"
 additional_redirect_urls = ["https://sonaelog.tanijiri.dev"]
 # 誰でも登録できる新規登録を止める。アカウントは npm run member:add で追加する
 enable_signup = false
+# パスワードは8文字以上（npm run member:add の確認と同じ）。漏えいパスワードの検査（HaveIBeenPwned）は Pro プラン以上のみのため使わない
+minimum_password_length = 8
 

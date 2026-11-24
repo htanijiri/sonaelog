@@ -84,6 +84,7 @@ Claude がコマンドで確認する項目：
 ## 4. 運用メモ
 - **更新**：コードを変えたら `npm run deploy`。アプリは Service Worker が自動で新しい版に入れ替える。
 - **DB の変更**：`supabase/migrations/` に新しい SQL を足し、`npx supabase db push --remote`。端末内の保存形式を変える場合は `src/local/snapshotStore.ts` の `LOCAL_FORMAT` を上げて移行を書く。
+- **セキュリティ検査の既知の警告**：`db advisors` の「Leaked Password Protection Disabled」は、無料プランでは有効にできない機能なので受け入れている（理由は TECH_NOTES）。パスワードの最小文字数は 8 にしてある。
 - **アカウントの追加**：`npm run member:add`。**パスワードの再設定**：`npm run member:add -- --email <メール> --reset-password`。
 - **休止防止のログ**：`npx wrangler tail sonaelog`（cron の実行時に「ping に成功しました」が出る）。
 - **Supabase が休止してしまった場合**：アプリは「同期失敗」と表示し、端末の保存分で閲覧は続けられる。Supabase の管理画面からプロジェクトを再開する（実施者：ユーザー。理由：ログインが必要）。
